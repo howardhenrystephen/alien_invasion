@@ -4,6 +4,7 @@ import pygame
 
 from setting import Settings
 from ship import Ship
+from bullet import Bullet
 
 class AlienInvasion:
     """管理游戏资源和行为的类"""
@@ -16,19 +17,23 @@ class AlienInvasion:
         self.clock = pygame.time.Clock()
 
         # pygame's surface
-
         self.screen = pygame.display.set_mode(
-            (0, 0),
-            pygame.FULLSCREEN
+            (self.settings.screen_width, self.settings.screen_length)
         )
-        self.settings.screen_width = self.screen.get_rect().width
-        self.settings.screen_height = self.screen.get_rect().height
+        # self.screen = pygame.display.set_mode(
+        #     (0, 0),
+        #     pygame.FULLSCREEN
+        # )
+        # self.settings.screen_width = self.screen.get_rect().width
+        # self.settings.screen_height = self.screen.get_rect().height
         # 窗口名
         pygame.display.set_caption("Alien Invasion")
 
-
         # 初始化飞船类
         self.ship = Ship(self)
+
+        # 初始化子弹组（编组）
+        self.bullets = pygame.sprite.Group()
 
     def run_game(self):
         """开始游戏的主循环"""
@@ -37,6 +42,8 @@ class AlienInvasion:
             # 响应事件
             self._check_events()
             self.ship.update()
+            # 更新子弹
+            self._update_bullets()
             # 更新屏幕
             self._update_screen()
             # 时钟计时
@@ -61,6 +68,8 @@ class AlienInvasion:
             self.ship.moving_right = True
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = True
+        elif event.key == pygame.K_SPACE:
+            self._fire_bullet()
         elif event.key == pygame.K_q:
             sys.exit()
         
@@ -71,11 +80,28 @@ class AlienInvasion:
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = False
             
-    
+    def _fire_bullet(self):
+        """创建一颗子弹，并将其加入到编组bullets"""
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        """更新子弹的位置并删除已消失的子弹"""
+        # 更新子弹的位置
+        self.bullets.update()
+
+        # 删除已经消失的子弹
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+        
     def _update_screen(self):
         """更新屏幕上的图像，并切换到新屏幕"""
         # RGB - Red, Green, Blue
         self.screen.fill(self.settings.bg_color)
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
         self.ship.blitme()
         
         # 让最近绘制的屏幕可见
