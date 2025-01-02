@@ -5,6 +5,7 @@ import pygame
 from setting import Settings
 from ship import Ship
 from bullet import Bullet
+from alien import Alien
 
 class AlienInvasion:
     """管理游戏资源和行为的类"""
@@ -18,7 +19,7 @@ class AlienInvasion:
 
         # pygame's surface
         self.screen = pygame.display.set_mode(
-            (self.settings.screen_width, self.settings.screen_length)
+            (self.settings.screen_width, self.settings.screen_height)
         )
         # self.screen = pygame.display.set_mode(
         #     (0, 0),
@@ -31,6 +32,10 @@ class AlienInvasion:
 
         # 初始化飞船类
         self.ship = Ship(self)
+
+        # 初始化外星人类（编组）
+        self.aliens = pygame.sprite.Group()
+        self._create_fleet()
 
         # 初始化子弹组（编组）
         self.bullets = pygame.sprite.Group()
@@ -95,6 +100,31 @@ class AlienInvasion:
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
+
+    def _create_fleet(self):
+        """创建一个外星人舰队"""
+        # 创建一个外星人
+        alien = Alien(self)
+        alien_width, alien_height = alien.rect.size
+
+        current_x, current_y = alien_width, alien_height
+        while current_y < (self.settings.screen_height - 3 * alien_height):
+            while current_x < (self.settings.screen_width - 2 * alien_width):
+                self._create_alien(current_x, current_y)
+                current_x += 2 * alien_width
+            
+            # 添加一行外星人后，重置x值并递增y值
+            current_x = alien_width
+            current_y += 2 * alien_height  
+
+    def _create_alien(self, x_position, y_position):
+        """创建新外星人"""
+        new_alien = Alien(self)
+        new_alien.x = x_position
+        new_alien.rect.x =  x_position
+        new_alien.rect.y = y_position
+        self.aliens.add(new_alien)
+
         
     def _update_screen(self):
         """更新屏幕上的图像，并切换到新屏幕"""
@@ -103,6 +133,8 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.ship.blitme()
+
+        self.aliens.draw(self.screen)
         
         # 让最近绘制的屏幕可见
         pygame.display.flip()
